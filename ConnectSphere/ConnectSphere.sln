@@ -3,6 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.Post.API", "src\ConnectSphere.Post.API\ConnectSphere.Post.API.csproj", "{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.Auth.API", "src\ConnectSphere.Auth.API\ConnectSphere.Auth.API.csproj", "{7FCD3DF7-0C00-4CD7-B110-241079E4968A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +16,19 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FCD3DF7-0C00-4CD7-B110-241079E4968A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FCD3DF7-0C00-4CD7-B110-241079E4968A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FCD3DF7-0C00-4CD7-B110-241079E4968A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FCD3DF7-0C00-4CD7-B110-241079E4968A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
+		{7FCD3DF7-0C00-4CD7-B110-241079E4968A} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
 	EndGlobalSection
 EndGlobal
