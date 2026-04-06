@@ -1,0 +1,37 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Environment & secrets — NEVER commit these
+appsettings.Development.json
+appsettings.Production.json
+
+# But DO commit the base appsettings.json (no real secrets in it)
+
+# EF Core migrations SQLite snapshot (keep Migrations folder itself)
+*.db
+*.db-shm
+*.db-wal
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# OS
+.DS_Store
+Thumbs.db
