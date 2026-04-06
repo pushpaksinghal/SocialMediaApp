@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\ConnectSphere.Auth.API.props" />
-</Project>
