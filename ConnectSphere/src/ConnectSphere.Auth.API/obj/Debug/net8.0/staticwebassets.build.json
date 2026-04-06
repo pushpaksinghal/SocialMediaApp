@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "kD+Sagq37MWYO8eDjoVJM2F1zkGFhbyXrViN2ZdDJDk=",
+  "Source": "ConnectSphere.Auth.API",
+  "BasePath": "_content/ConnectSphere.Auth.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
