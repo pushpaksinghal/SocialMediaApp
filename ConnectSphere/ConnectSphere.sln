@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.Auth.API", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.Like.API", "src\ConnectSphere.Like.API\ConnectSphere.Like.API.csproj", "{EC82C747-66F0-45CD-992B-FC99A05B58B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.Comment.API", "src\ConnectSphere.Comment.API\ConnectSphere.Comment.API.csproj", "{1E3D696D-0343-4349-84BF-041552A4C09A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,10 +34,15 @@ Global
 		{EC82C747-66F0-45CD-992B-FC99A05B58B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EC82C747-66F0-45CD-992B-FC99A05B58B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EC82C747-66F0-45CD-992B-FC99A05B58B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E3D696D-0343-4349-84BF-041552A4C09A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E3D696D-0343-4349-84BF-041552A4C09A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E3D696D-0343-4349-84BF-041552A4C09A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E3D696D-0343-4349-84BF-041552A4C09A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CF625BEF-C57F-4E3B-91EA-E949EF91A8B9} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
 		{7FCD3DF7-0C00-4CD7-B110-241079E4968A} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
 		{EC82C747-66F0-45CD-992B-FC99A05B58B7} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
+		{1E3D696D-0343-4349-84BF-041552A4C09A} = {AC4C5907-045E-4BEE-9596-BE3BA5F34F1D}
 	EndGlobalSection
 EndGlobal
