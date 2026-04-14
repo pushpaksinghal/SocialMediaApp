@@ -23,7 +23,10 @@ public class PostController : ControllerBase
         return value is null ? null : int.Parse(value);
     }
 
-    // POST /api/posts
+    private string GetAccessToken() =>
+    HttpContext.Request.Headers.Authorization
+        .ToString()["Bearer ".Length..].Trim();
+
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreatePost(
@@ -33,7 +36,9 @@ public class PostController : ControllerBase
         var userId = int.Parse(
             User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        var post = await _postService.CreatePostAsync(userId, request, media);
+        var post = await _postService.CreatePostAsync(
+            userId, request, media, GetAccessToken());
+
         return StatusCode(201, post);
     }
 
@@ -87,12 +92,10 @@ public class PostController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeletePost(int id)
     {
-        var userId = int.Parse(
-            User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
         try
         {
-            await _postService.SoftDeletePostAsync(id, userId);
+            await _postService.SoftDeletePostAsync(
+                id, GetRequestingUserId()!.Value, GetAccessToken());
             return NoContent();
         }
         catch (KeyNotFoundException ex)
@@ -167,5 +170,12 @@ public class PostController : ControllerBase
     {
         await _postService.AdminDeletePostAsync(id);
         return NoContent();
+    }
+    // POST /api/posts/{id}/increment-comment
+    [HttpPost("{id:int}/increment-comment")]
+    public async Task<IActionResult> IncrementCommentCount(int id)
+    {
+        await _postService.IncrementCommentCountAsync(id);
+        return Ok();
     }
 }

@@ -22,4 +22,7 @@ public interface IAuthService
     string fullName,
     string userName,
     string provider);
+
+    Task UpdateFollowCountsAsync(int followerId, int followeeId, bool increment);
+    Task UpdatePostCountAsync(int userId, bool increment);
 }

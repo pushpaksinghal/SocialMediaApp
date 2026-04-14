@@ -19,6 +19,9 @@ public class FollowController : ControllerBase
 
     private int GetUserId() =>
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private string GetAccessToken() =>
+        HttpContext.Request.Headers.Authorization
+            .ToString()["Bearer ".Length..].Trim();
 
     // POST /api/follows
     [Authorize]
@@ -28,7 +31,7 @@ public class FollowController : ControllerBase
         try
         {
             var follow = await _followService.FollowUserAsync(
-                GetUserId(), request);
+                GetUserId(), request, GetAccessToken());
             return StatusCode(201, follow);
         }
         catch (InvalidOperationException ex)
@@ -45,7 +48,7 @@ public class FollowController : ControllerBase
         try
         {
             var follow = await _followService.AcceptFollowRequestAsync(
-                id, GetUserId());
+                id, GetUserId(), GetAccessToken());
             return Ok(follow);
         }
         catch (KeyNotFoundException ex)
@@ -58,6 +61,22 @@ public class FollowController : ControllerBase
         }
     }
 
+    // DELETE /api/follows/{followeeId}
+    [Authorize]
+    [HttpDelete("{followeeId:int}")]
+    public async Task<IActionResult> Unfollow(int followeeId)
+    {
+        try
+        {
+            await _followService.UnfollowUserAsync(
+                GetUserId(), followeeId, GetAccessToken());
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
     // PUT /api/follows/{id}/reject
     [Authorize]
     [HttpPut("{id:int}/reject")]
@@ -68,22 +87,6 @@ public class FollowController : ControllerBase
             var follow = await _followService.RejectFollowRequestAsync(
                 id, GetUserId());
             return Ok(follow);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-    }
-
-    // DELETE /api/follows/{followeeId}
-    [Authorize]
-    [HttpDelete("{followeeId:int}")]
-    public async Task<IActionResult> Unfollow(int followeeId)
-    {
-        try
-        {
-            await _followService.UnfollowUserAsync(GetUserId(), followeeId);
-            return NoContent();
         }
         catch (KeyNotFoundException ex)
         {
@@ -127,6 +130,7 @@ public class FollowController : ControllerBase
             GetUserId(), followeeId);
         return Ok(new { isFollowing = result });
     }
+
 
     // GET /api/follows/ids/{userId}
     [Authorize]

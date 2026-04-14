@@ -189,122 +189,152 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Account deactivated." });
     }
     // GET /api/auth/login/google
-[HttpGet("login/google")]
-public IActionResult LoginWithGoogle(
-    [FromQuery] string returnUrl = "/api/auth/callback/google")
-{
-    var properties = new AuthenticationProperties
+    [HttpGet("login/google")]
+    public IActionResult LoginWithGoogle(
+        [FromQuery] string returnUrl = "/api/auth/callback/google")
     {
-        RedirectUri = Url.Action(nameof(GoogleCallback), "Auth"),
-        Items =
+        var properties = new AuthenticationProperties
         {
-            { "LoginProvider", "Google" }
-        }
-    };
+            RedirectUri = Url.Action(nameof(GoogleCallback), "Auth"),
+            Items =
+            {
+                { "LoginProvider", "Google" }
+            }
+        };
 
-    return Challenge(properties, GoogleDefaults.AuthenticationScheme);
-}
+        return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+    }
 
-// GET /api/auth/callback/google
-[HttpGet("callback/google")]
-public async Task<IActionResult> GoogleCallback()
-{
-    // Read the cookie that Google signed us into
-    var result = await HttpContext.AuthenticateAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme);
-
-    if (!result.Succeeded || result.Principal == null)
-        return Unauthorized(new { message = "Google login failed." });
-
-    var claims = result.Principal.Claims.ToList();
-
-    var email = claims.FirstOrDefault(c =>
-        c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
-
-    var fullName = claims.FirstOrDefault(c =>
-        c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
-
-    var userName = claims.FirstOrDefault(c =>
-        c.Type == ClaimTypes.GivenName)?.Value
-        ?? email.Split('@')[0];
-
-    if (string.IsNullOrEmpty(email))
-        return BadRequest(new { message = "Could not retrieve email from Google." });
-
-    try
+    // GET /api/auth/callback/google
+    [HttpGet("callback/google")]
+    public async Task<IActionResult> GoogleCallback()
     {
-        var response = await _authService.ExternalLoginAsync(
-            email, fullName, userName, "Google");
-
-        // Sign out of cookie session — we use JWT from here
-        await HttpContext.SignOutAsync(
+        // Read the cookie that Google signed us into
+        var result = await HttpContext.AuthenticateAsync(
             CookieAuthenticationDefaults.AuthenticationScheme);
 
-        return Ok(response);
-    }
-    catch (UnauthorizedAccessException ex)
-    {
-        return Unauthorized(new { message = ex.Message });
-    }
-}
+        if (!result.Succeeded || result.Principal == null)
+            return Unauthorized(new { message = "Google login failed." });
 
-// GET /api/auth/login/github
-[HttpGet("login/github")]
-public IActionResult LoginWithGitHub()
-{
-    var properties = new AuthenticationProperties
-    {
-        RedirectUri = Url.Action(nameof(GitHubCallback), "Auth"),
-        Items =
+        var claims = result.Principal.Claims.ToList();
+
+        var email = claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
+
+        var fullName = claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var userName = claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.GivenName)?.Value
+            ?? email.Split('@')[0];
+
+        if (string.IsNullOrEmpty(email))
+            return BadRequest(new { message = "Could not retrieve email from Google." });
+
+        try
         {
-            { "LoginProvider", "GitHub" }
+            var response = await _authService.ExternalLoginAsync(
+                email, fullName, userName, "Google");
+
+            // Sign out of cookie session — we use JWT from here
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return Ok(response);
         }
-    };
-
-    return Challenge(properties, "GitHub");
-}
-
-// GET /api/auth/callback/github
-[HttpGet("callback/github")]
-public async Task<IActionResult> GitHubCallback()
-{
-    var result = await HttpContext.AuthenticateAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme);
-
-    if (!result.Succeeded || result.Principal == null)
-        return Unauthorized(new { message = "GitHub login failed." });
-
-    var claims = result.Principal.Claims.ToList();
-
-    var email = claims.FirstOrDefault(c =>
-        c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
-
-    var fullName = claims.FirstOrDefault(c =>
-        c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
-
-    var userName = claims.FirstOrDefault(c =>
-        c.Type == "urn:github:login")?.Value
-        ?? email.Split('@')[0];
-
-    if (string.IsNullOrEmpty(email))
-        return BadRequest(new
+        catch (UnauthorizedAccessException ex)
         {
-            message = "GitHub account must have a public email."
-        });
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
 
-    try
+    // GET /api/auth/login/github
+    [HttpGet("login/github")]
+    public IActionResult LoginWithGitHub()
     {
-        var response = await _authService.ExternalLoginAsync(
-            email, fullName, userName, "GitHub");
+        var properties = new AuthenticationProperties
+        {
+            RedirectUri = Url.Action(nameof(GitHubCallback), "Auth"),
+            Items =
+            {
+                { "LoginProvider", "GitHub" }
+            }
+        };
 
-        await HttpContext.SignOutAsync(
+        return Challenge(properties, "GitHub");
+    }
+
+    // GET /api/auth/callback/github
+    [HttpGet("callback/github")]
+    public async Task<IActionResult> GitHubCallback()
+    {
+        var result = await HttpContext.AuthenticateAsync(
             CookieAuthenticationDefaults.AuthenticationScheme);
 
-        return Ok(response);
+        if (!result.Succeeded || result.Principal == null)
+            return Unauthorized(new { message = "GitHub login failed." });
+
+        var claims = result.Principal.Claims.ToList();
+
+        var email = claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
+
+        var fullName = claims.FirstOrDefault(c =>
+            c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var userName = claims.FirstOrDefault(c =>
+            c.Type == "urn:github:login")?.Value
+            ?? email.Split('@')[0];
+
+        if (string.IsNullOrEmpty(email))
+            return BadRequest(new
+            {
+                message = "GitHub account must have a public email."
+            });
+
+        try
+        {
+            var response = await _authService.ExternalLoginAsync(
+                email, fullName, userName, "GitHub");
+
+            await HttpContext.SignOutAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
     }
-    catch (UnauthorizedAccessException ex)
+    // POST /api/auth/update-counts
+    [Authorize]
+    [HttpPost("update-counts")]
+    public async Task<IActionResult> UpdateFollowCounts(
+        [FromBody] UpdateFollowCountsRequest request)
     {
-        return Unauthorized(new { message = ex.Message });
+        await _authService.UpdateFollowCountsAsync(
+            request.FollowerId,
+            request.FolloweeId,
+            request.Increment);
+
+        return Ok();
     }
-}
+    // POST /api/auth/increment-post/{userId}
+    [Authorize]
+    [HttpPost("increment-post/{userId:int}")]
+    public async Task<IActionResult> IncrementPostCount(int userId)
+    {
+        await _authService.UpdatePostCountAsync(userId, increment: true);
+        return Ok();
+    }
+
+    // POST /api/auth/decrement-post/{userId}
+    [Authorize]
+    [HttpPost("decrement-post/{userId:int}")]
+    public async Task<IActionResult> DecrementPostCount(int userId)
+    {
+        await _authService.UpdatePostCountAsync(userId, increment: false);
+        return Ok();
+    }
 }

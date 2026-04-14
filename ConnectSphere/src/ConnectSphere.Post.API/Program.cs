@@ -1,5 +1,6 @@
 using System.Text;
 using ConnectSphere.Post.API.Data;
+using ConnectSphere.Post.API.HttpClients;
 using ConnectSphere.Post.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,11 @@ builder.Services.AddAuthorization();
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IPostService, PostService>();
 
+builder.Services.AddHttpClient<AuthServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:AuthService"]!);
+});
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -1,5 +1,6 @@
 using ConnectSphere.Follow.API.Data;
 using ConnectSphere.Follow.API.DTOs;
+using ConnectSphere.Follow.API.HttpClients;
 using ConnectSphere.Follow.API.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,19 +9,24 @@ namespace ConnectSphere.Follow.API.Services;
 public class FollowService : IFollowService
 {
     private readonly FollowDbContext _db;
+
+    private readonly NotifServiceClient _notifClient;
+    private readonly AuthServiceClient _authClient;
     private readonly ILogger<FollowService> _logger;
 
-    public FollowService(FollowDbContext db, ILogger<FollowService> logger)
+    public FollowService(FollowDbContext db,NotifServiceClient notifClient,
+        AuthServiceClient authClient, ILogger<FollowService> logger)
     {
         _db = db;
+        _notifClient = notifClient;
+        _authClient  = authClient;
         _logger = logger;
     }
 
     // ── Follow User ──────────────────────────────────────────────────────────
     public async Task<FollowDto> FollowUserAsync(
-        int followerId, FollowRequest request)
+        int followerId, FollowRequest request, string accessToken)
     {
-        // Check if already following
         var existing = await _db.Follows.FirstOrDefaultAsync(f =>
             f.FollowerId == followerId &&
             f.FolloweeId == request.FolloweeId);
@@ -29,8 +35,6 @@ public class FollowService : IFollowService
             throw new InvalidOperationException(
                 "Already following or request pending.");
 
-        // Public account → ACCEPTED immediately
-        // Private account → PENDING until accepted
         var status = request.IsPrivate ? "PENDING" : "ACCEPTED";
 
         var follow = new Follows
@@ -44,16 +48,26 @@ public class FollowService : IFollowService
         _db.Follows.Add(follow);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "User {FollowerId} followed user {FolloweeId} with status {Status}",
-            followerId, request.FolloweeId, status);
+        // If public account — update counts immediately
+        if (status == "ACCEPTED")
+        {
+            _ = _authClient.UpdateFollowCountsAsync(
+                followerId, request.FolloweeId, true, accessToken);
+        }
+
+        // Send notification
+        _ = _notifClient.SendFollowNotifAsync(
+            actorId     : followerId,
+            recipientId : request.FolloweeId,
+            isPending   : status == "PENDING",
+            accessToken : accessToken);
 
         return MapToDto(follow);
     }
 
     // ── Accept Follow Request ────────────────────────────────────────────────
     public async Task<FollowDto> AcceptFollowRequestAsync(
-        int followId, int userId)
+        int followId, int userId, string accessToken)
     {
         var follow = await _db.Follows.FirstOrDefaultAsync(f =>
             f.FollowId == followId && f.FolloweeId == userId)
@@ -68,6 +82,17 @@ public class FollowService : IFollowService
                 f => f.Status, "ACCEPTED"));
 
         follow.Status = "ACCEPTED";
+
+        // Update counts now that request is accepted
+        _ = _authClient.UpdateFollowCountsAsync(
+            follow.FollowerId, follow.FolloweeId, true, accessToken);
+
+        // Notify the follower their request was accepted
+        _ = _notifClient.SendFollowAcceptedNotifAsync(
+            actorId     : userId,
+            recipientId : follow.FollowerId,
+            accessToken : accessToken);
+
         return MapToDto(follow);
     }
 
@@ -86,7 +111,8 @@ public class FollowService : IFollowService
     }
 
     // ── Unfollow ─────────────────────────────────────────────────────────────
-    public async Task UnfollowUserAsync(int followerId, int followeeId)
+    public async Task UnfollowUserAsync(
+        int followerId, int followeeId, string accessToken)
     {
         var follow = await _db.Follows.FirstOrDefaultAsync(f =>
             f.FollowerId == followerId && f.FolloweeId == followeeId)
@@ -95,9 +121,9 @@ public class FollowService : IFollowService
         _db.Follows.Remove(follow);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "User {FollowerId} unfollowed user {FolloweeId}",
-            followerId, followeeId);
+        // Decrement counts
+        _ = _authClient.UpdateFollowCountsAsync(
+            followerId, followeeId, false, accessToken);
     }
 
     // ── Get Followers ────────────────────────────────────────────────────────

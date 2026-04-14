@@ -1,6 +1,7 @@
 using Azure.Storage.Blobs;
 using ConnectSphere.Post.API.Data;
 using ConnectSphere.Post.API.DTOs;
+using ConnectSphere.Post.API.HttpClients;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectSphere.Post.API.Services;
@@ -8,22 +9,27 @@ namespace ConnectSphere.Post.API.Services;
 public class PostService : IPostService
 {
     private readonly PostDbContext _db;
+
     private readonly IConfiguration _config;
+    private readonly AuthServiceClient _authClient;
     private readonly ILogger<PostService> _logger;
 
     public PostService(
         PostDbContext db,
         IConfiguration config,
+        AuthServiceClient authClient,
         ILogger<PostService> logger)
     {
         _db = db;
         _config = config;
+        _authClient = authClient;
         _logger = logger;
     }
 
     // ── Create Post ──────────────────────────────────────────────────────────
     public async Task<PostDto> CreatePostAsync(
-        int userId, CreatePostRequest request, IFormFile? media)
+        int userId, CreatePostRequest request,
+        IFormFile? media, string accessToken)
     {
         var post = new Models.Post
         {
@@ -36,15 +42,23 @@ public class PostService : IPostService
 
         if (media is not null)
         {
-            post.MediaUrl  = await UploadMediaAsync(userId, media);
-            post.MediaType = ResolveMediaType(media.ContentType);
+            try
+            {
+                post.MediaUrl  = await UploadMediaAsync(userId, media);
+                post.MediaType = ResolveMediaType(media.ContentType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    "Media upload skipped: {Message}", ex.Message);
+            }
         }
 
         _db.Posts.Add(post);
         await _db.SaveChangesAsync();
 
-        _logger.LogInformation(
-            "Post {PostId} created by user {UserId}", post.PostId, userId);
+        // Increment post count on user
+        _ = _authClient.IncrementPostCountAsync(userId, accessToken);
 
         return MapToDto(post);
     }
@@ -108,18 +122,23 @@ public class PostService : IPostService
     }
 
     // ── Soft Delete ──────────────────────────────────────────────────────────
-    public async Task SoftDeletePostAsync(int postId, int userId)
+    public async Task SoftDeletePostAsync(
+        int postId, int userId, string accessToken)
     {
         var post = await _db.Posts
             .FirstOrDefaultAsync(p => p.PostId == postId && !p.IsDeleted)
             ?? throw new KeyNotFoundException("Post not found.");
 
         if (post.UserId != userId)
-            throw new UnauthorizedAccessException("You can only delete your own posts.");
+            throw new UnauthorizedAccessException(
+                "You can only delete your own posts.");
 
         await _db.Posts
             .Where(p => p.PostId == postId)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.IsDeleted, true));
+
+        // Decrement post count on user
+        _ = _authClient.DecrementPostCountAsync(userId, accessToken);
     }
 
     // ── Browse By Hashtag ────────────────────────────────────────────────────
