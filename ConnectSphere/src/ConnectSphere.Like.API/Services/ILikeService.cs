@@ -4,7 +4,7 @@ namespace ConnectSphere.Like.API.Services;
 
 public interface ILikeService
 {
-    Task<ToggleLikeResponse> ToggleLikeAsync(int userId, ToggleLikeRequest request);
+    Task<ToggleLikeResponse> ToggleLikeAsync(int userId, ToggleLikeRequest request,string accessToken);
     Task<List<LikeDto>> GetLikesByTargetAsync(int targetId, string targetType);
     Task<List<LikeDto>> GetLikesByUserAsync(int userId);
     Task<int> GetLikeCountAsync(int targetId, string targetType);

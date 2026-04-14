@@ -1,5 +1,6 @@
 using System.Text;
 using ConnectSphere.Like.API.Data;
+using ConnectSphere.Like.API.HttpClients;
 using ConnectSphere.Like.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,12 @@ builder.Services.AddAuthorization();
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<ILikeService, LikeService>();
 
+// ── HTTP Clients ──────────────────────────────────────────────────────────────
+builder.Services.AddHttpClient<NotifServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:NotifService"]!);
+});
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

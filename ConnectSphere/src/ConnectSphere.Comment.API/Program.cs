@@ -1,5 +1,6 @@
 using System.Text;
 using ConnectSphere.Comment.API.Data;
+using ConnectSphere.Comment.API.HttpClients;
 using ConnectSphere.Comment.API.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,18 @@ builder.Services.AddAuthorization();
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<ICommentService, CommentService>();
 
+// ── HTTP Clients ──────────────────────────────────────────────────────────────
+builder.Services.AddHttpClient<NotifServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:NotifService"]!);
+});
+
+builder.Services.AddHttpClient<PostServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:PostService"]!);
+});
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

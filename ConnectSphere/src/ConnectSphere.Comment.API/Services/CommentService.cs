@@ -1,5 +1,6 @@
 using ConnectSphere.Comment.API.Data;
 using ConnectSphere.Comment.API.DTOs;
+using ConnectSphere.Comment.API.HttpClients;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectSphere.Comment.API.Services;
@@ -7,17 +8,22 @@ namespace ConnectSphere.Comment.API.Services;
 public class CommentService : ICommentService
 {
     private readonly CommentDbContext _db;
+    private readonly NotifServiceClient _notifClient;
+    private readonly PostServiceClient _postClient;
     private readonly ILogger<CommentService> _logger;
 
-    public CommentService(CommentDbContext db, ILogger<CommentService> logger)
+    public CommentService(CommentDbContext db,NotifServiceClient notifClient,
+        PostServiceClient postClient, ILogger<CommentService> logger)
     {
         _db = db;
+        _notifClient = notifClient;
+        _postClient  = postClient;
         _logger = logger;
     }
 
     // ── Add Comment ──────────────────────────────────────────────────────────
-    public async Task<CommentDto> AddCommentAsync(
-        int userId, AddCommentRequest request)
+   public async Task<CommentDto> AddCommentAsync(
+        int userId, AddCommentRequest request, string accessToken)
     {
         var comment = new Models.Comment
         {
@@ -31,21 +37,47 @@ public class CommentService : ICommentService
         _db.Comments.Add(comment);
         await _db.SaveChangesAsync();
 
-        // If this is a reply, increment parent ReplyCount
+        // Increment comment count on post
+        _ = _postClient.IncrementCommentCountAsync(request.PostId);
+
+        // Get post owner to notify them
+        var postOwnerId = await _postClient
+            .GetPostOwnerIdAsync(request.PostId);
+
         if (request.ParentCommentId.HasValue)
         {
+            // It's a reply — increment reply count on parent
             await _db.Comments
                 .Where(c => c.CommentId == request.ParentCommentId.Value)
                 .ExecuteUpdateAsync(s => s.SetProperty(
                     c => c.ReplyCount, c => c.ReplyCount + 1));
-        }
 
-        _logger.LogInformation(
-            "Comment {CommentId} added by user {UserId} on post {PostId}",
-            comment.CommentId, userId, request.PostId);
+            // Notify parent comment author
+            var parentComment = await _db.Comments.FindAsync(
+                request.ParentCommentId.Value);
+
+            if (parentComment is not null && parentComment.UserId != userId)
+            {
+                _ = _notifClient.SendReplyNotifAsync(
+                    actorId     : userId,
+                    recipientId : parentComment.UserId,
+                    commentId   : comment.CommentId,
+                    accessToken : accessToken);
+            }
+        }
+        else if (postOwnerId.HasValue && postOwnerId.Value != userId)
+        {
+            // Notify post owner
+            _ = _notifClient.SendCommentNotifAsync(
+                actorId     : userId,
+                recipientId : postOwnerId.Value,
+                postId      : request.PostId,
+                accessToken : accessToken);
+        }
 
         return MapToDto(comment);
     }
+
 
     // ── Get Comment By ID ────────────────────────────────────────────────────
     public async Task<CommentDto?> GetCommentByIdAsync(int commentId)

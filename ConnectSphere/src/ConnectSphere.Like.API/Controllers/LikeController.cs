@@ -25,7 +25,12 @@ public class LikeController : ControllerBase
     [HttpPost("toggle")]
     public async Task<IActionResult> Toggle([FromBody] ToggleLikeRequest request)
     {
-        var result = await _likeService.ToggleLikeAsync(GetUserId(), request);
+        var accessToken = HttpContext.Request.Headers.Authorization
+            .ToString()["Bearer ".Length..].Trim();
+
+        var result = await _likeService.ToggleLikeAsync(
+            GetUserId(), request, accessToken);
+
         return Ok(result);
     }
 

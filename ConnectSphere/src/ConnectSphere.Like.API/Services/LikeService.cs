@@ -1,5 +1,6 @@
 using ConnectSphere.Like.API.Data;
 using ConnectSphere.Like.API.DTOs;
+using ConnectSphere.Like.API.HttpClients;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectSphere.Like.API.Services;
@@ -7,17 +8,21 @@ namespace ConnectSphere.Like.API.Services;
 public class LikeService : ILikeService
 {
     private readonly LikeDbContext _db;
+
+    private readonly NotifServiceClient _notifClient;
     private readonly ILogger<LikeService> _logger;
 
-    public LikeService(LikeDbContext db, ILogger<LikeService> logger)
+    public LikeService(LikeDbContext db,
+        NotifServiceClient notifClient, ILogger<LikeService> logger)
     {
         _db = db;
+        _notifClient= notifClient;
         _logger = logger;
     }
 
     // ── Toggle Like ──────────────────────────────────────────────────────────
     public async Task<ToggleLikeResponse> ToggleLikeAsync(
-        int userId, ToggleLikeRequest request)
+        int userId, ToggleLikeRequest request, string accessToken)
     {
         await using var transaction = await _db.Database.BeginTransactionAsync();
 
@@ -32,7 +37,6 @@ public class LikeService : ILikeService
 
             if (existing is null)
             {
-                // Add like
                 _db.Likes.Add(new Models.Like
                 {
                     UserId     = userId,
@@ -41,26 +45,30 @@ public class LikeService : ILikeService
                     CreatedAt  = DateTime.UtcNow
                 });
                 liked = true;
-                _logger.LogInformation(
-                    "User {UserId} liked {TargetType} {TargetId}",
-                    userId, request.TargetType, request.TargetId);
             }
             else
             {
-                // Remove like
                 _db.Likes.Remove(existing);
                 liked = false;
-                _logger.LogInformation(
-                    "User {UserId} unliked {TargetType} {TargetId}",
-                    userId, request.TargetType, request.TargetId);
             }
 
             await _db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            // Get updated count
             var count = await GetLikeCountAsync(
                 request.TargetId, request.TargetType);
+
+            // Send notification only when liking not unliking
+            if (liked)
+            {
+                // Fire and forget — don't block the response
+                _ = _notifClient.SendLikeNotifAsync(
+                    actorId     : userId,
+                    recipientId : request.TargetId, // will be refined later
+                    targetId    : request.TargetId,
+                    targetType  : request.TargetType,
+                    accessToken : accessToken);
+            }
 
             return new ToggleLikeResponse { Liked = liked, LikeCount = count };
         }

@@ -26,8 +26,12 @@ public class CommentController : ControllerBase
     public async Task<IActionResult> AddComment(
         [FromBody] AddCommentRequest request)
     {
+        var accessToken = HttpContext.Request.Headers.Authorization
+            .ToString()["Bearer ".Length..].Trim();
+
         var comment = await _commentService.AddCommentAsync(
-            GetUserId(), request);
+            GetUserId(), request, accessToken);
+
         return StatusCode(201, comment);
     }
 

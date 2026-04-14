@@ -310,4 +310,34 @@ public class AuthService : IAuthService
         PostCount      = u.PostCount,
         CreatedAt      = u.CreatedAt
     };
+
+    public async Task UpdateFollowCountsAsync(
+        int followerId, int followeeId, bool increment)
+    {
+        var delta = increment ? 1 : -1;
+
+        // Increment/decrement followingCount on follower
+        await _db.Users
+            .Where(u => u.UserId == followerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(
+                u => u.FollowingCount,
+                u => u.FollowingCount + delta));
+
+        // Increment/decrement followerCount on followee
+        await _db.Users
+            .Where(u => u.UserId == followeeId)
+            .ExecuteUpdateAsync(s => s.SetProperty(
+                u => u.FollowerCount,
+                u => u.FollowerCount + delta));
+    }
+    public async Task UpdatePostCountAsync(int userId, bool increment)
+    {
+        var delta = increment ? 1 : -1;
+
+        await _db.Users
+            .Where(u => u.UserId == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(
+                u => u.PostCount,
+                u => u.PostCount + delta));
+    }
 }

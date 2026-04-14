@@ -4,7 +4,7 @@ namespace ConnectSphere.Comment.API.Services;
 
 public interface ICommentService
 {
-    Task<CommentDto> AddCommentAsync(int userId, AddCommentRequest request);
+    Task<CommentDto> AddCommentAsync(int userId, AddCommentRequest request,string accessToken);
     Task<CommentDto?> GetCommentByIdAsync(int commentId);
     Task<List<CommentDto>> GetByPostAsync(int postId);
     Task<List<CommentDto>> GetTopLevelAsync(int postId);
