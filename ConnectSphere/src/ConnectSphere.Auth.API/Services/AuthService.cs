@@ -202,6 +202,68 @@ public class AuthService : IAuthService
             .ExecuteUpdateAsync(s => s.SetProperty(u => u.IsActive, false));
     }
 
+    // ── External Login (Google / GitHub) ─────────────────────────────────────
+    public async Task<ExternalAuthResponse> ExternalLoginAsync(
+        string email,
+        string fullName,
+        string userName,
+        string provider)
+    {
+        // Check if user already exists with this email
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == email);
+
+        bool isNewUser = false;
+
+        if (user is null)
+        {
+            // New user — create account automatically
+            // Make username unique if taken
+            var baseUserName = userName.Replace(" ", "").ToLower();
+            var finalUserName = baseUserName;
+            var count = 1;
+
+            while (await _db.Users.AnyAsync(u => u.UserName == finalUserName))
+            {
+                finalUserName = $"{baseUserName}{count}";
+                count++;
+            }
+
+            user = new User
+            {
+                Email        = email,
+                FullName     = fullName,
+                UserName     = finalUserName,
+                PasswordHash = string.Empty, // No password for OAuth users
+                IsActive     = true,
+                CreatedAt    = DateTime.UtcNow
+            };
+
+            _db.Users.Add(user);
+            await _db.SaveChangesAsync();
+
+            isNewUser = true;
+
+            _logger.LogInformation(
+                "New user {Email} registered via {Provider}",
+                email, provider);
+        }
+        else if (!user.IsActive)
+        {
+            throw new UnauthorizedAccessException(
+                "Account is suspended.");
+        }
+
+        var authResponse = await BuildAuthResponseAsync(user);
+
+        return new ExternalAuthResponse
+        {
+            AccessToken  = authResponse.AccessToken,
+            RefreshToken = authResponse.RefreshToken,
+            User         = authResponse.User,
+            IsNewUser    = isNewUser
+        };
+    }
     // ── Helpers ──────────────────────────────────────────────────────────────
     private async Task<AuthResponse> BuildAuthResponseAsync(User user)
     {

@@ -1,6 +1,9 @@
 using System.Security.Claims;
 using ConnectSphere.Auth.API.DTOs;
 using ConnectSphere.Auth.API.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -185,4 +188,123 @@ public class AuthController : ControllerBase
         await _authService.DeactivateAccountAsync(userId);
         return Ok(new { message = "Account deactivated." });
     }
+    // GET /api/auth/login/google
+[HttpGet("login/google")]
+public IActionResult LoginWithGoogle(
+    [FromQuery] string returnUrl = "/api/auth/callback/google")
+{
+    var properties = new AuthenticationProperties
+    {
+        RedirectUri = Url.Action(nameof(GoogleCallback), "Auth"),
+        Items =
+        {
+            { "LoginProvider", "Google" }
+        }
+    };
+
+    return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+}
+
+// GET /api/auth/callback/google
+[HttpGet("callback/google")]
+public async Task<IActionResult> GoogleCallback()
+{
+    // Read the cookie that Google signed us into
+    var result = await HttpContext.AuthenticateAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme);
+
+    if (!result.Succeeded || result.Principal == null)
+        return Unauthorized(new { message = "Google login failed." });
+
+    var claims = result.Principal.Claims.ToList();
+
+    var email = claims.FirstOrDefault(c =>
+        c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
+
+    var fullName = claims.FirstOrDefault(c =>
+        c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
+
+    var userName = claims.FirstOrDefault(c =>
+        c.Type == ClaimTypes.GivenName)?.Value
+        ?? email.Split('@')[0];
+
+    if (string.IsNullOrEmpty(email))
+        return BadRequest(new { message = "Could not retrieve email from Google." });
+
+    try
+    {
+        var response = await _authService.ExternalLoginAsync(
+            email, fullName, userName, "Google");
+
+        // Sign out of cookie session — we use JWT from here
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme);
+
+        return Ok(response);
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return Unauthorized(new { message = ex.Message });
+    }
+}
+
+// GET /api/auth/login/github
+[HttpGet("login/github")]
+public IActionResult LoginWithGitHub()
+{
+    var properties = new AuthenticationProperties
+    {
+        RedirectUri = Url.Action(nameof(GitHubCallback), "Auth"),
+        Items =
+        {
+            { "LoginProvider", "GitHub" }
+        }
+    };
+
+    return Challenge(properties, "GitHub");
+}
+
+// GET /api/auth/callback/github
+[HttpGet("callback/github")]
+public async Task<IActionResult> GitHubCallback()
+{
+    var result = await HttpContext.AuthenticateAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme);
+
+    if (!result.Succeeded || result.Principal == null)
+        return Unauthorized(new { message = "GitHub login failed." });
+
+    var claims = result.Principal.Claims.ToList();
+
+    var email = claims.FirstOrDefault(c =>
+        c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
+
+    var fullName = claims.FirstOrDefault(c =>
+        c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
+
+    var userName = claims.FirstOrDefault(c =>
+        c.Type == "urn:github:login")?.Value
+        ?? email.Split('@')[0];
+
+    if (string.IsNullOrEmpty(email))
+        return BadRequest(new
+        {
+            message = "GitHub account must have a public email."
+        });
+
+    try
+    {
+        var response = await _authService.ExternalLoginAsync(
+            email, fullName, userName, "GitHub");
+
+        await HttpContext.SignOutAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme);
+
+        return Ok(response);
+    }
+    catch (UnauthorizedAccessException ex)
+    {
+        return Unauthorized(new { message = ex.Message });
+    }
+}
 }

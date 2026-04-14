@@ -16,4 +16,10 @@ public interface IAuthService
     Task<List<UserProfileDto>> SearchUsersAsync(string query);
     Task<List<UserProfileDto>> GetSuggestionsAsync(int userId);
     Task DeactivateAccountAsync(int userId);
+
+    Task<ExternalAuthResponse> ExternalLoginAsync(
+    string email,
+    string fullName,
+    string userName,
+    string provider);
 }
