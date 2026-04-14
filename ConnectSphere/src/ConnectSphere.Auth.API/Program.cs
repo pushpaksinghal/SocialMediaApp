@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
+using AspNet.Security.OAuth.GitHub;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,24 +23,50 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 
 // ── JWT Auth ──────────────────────────────────────────────────────────────────
 var jwtSecret = builder.Configuration["Jwt:Secret"]!;
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// ── Authentication ────────────────────────────────────────────────────────────
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme       = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.SameSite  = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // http for local dev
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer              = builder.Configuration["Jwt:Issuer"],
-            ValidAudience            = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey         = new SymmetricSecurityKey(
-                                           Encoding.UTF8.GetBytes(jwtSecret)),
-            ClockSkew                = TimeSpan.Zero
-        };
-    });
-
+        ValidateIssuer           = true,
+        ValidateAudience         = true,
+        ValidateLifetime         = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer              = builder.Configuration["Jwt:Issuer"],
+        ValidAudience            = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey         = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtSecret)),
+        ClockSkew                = TimeSpan.Zero
+    };
+})
+.AddGoogle(options =>
+{
+    options.ClientId          = builder.Configuration["Google:ClientId"]!;
+    options.ClientSecret      = builder.Configuration["Google:ClientSecret"]!;
+    options.CallbackPath      = "/signin-google"; // ← use default path
+    options.SignInScheme      = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.SaveTokens        = true;
+})
+.AddGitHub(options =>
+{
+    options.ClientId          = builder.Configuration["GitHub:ClientId"]!;
+    options.ClientSecret      = builder.Configuration["GitHub:ClientSecret"]!;
+    options.CallbackPath      = "/signin-github"; // ← use default path
+    options.SignInScheme      = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.Scope.Add("user:email");
+    options.SaveTokens        = true;
+});
 builder.Services.AddAuthorization();
 
 // ── Services ──────────────────────────────────────────────────────────────────
