@@ -9,4 +9,5 @@ public class CreatePostRequest
     [MaxLength(12)]
     public string Visibility { get; set; } = "PUBLIC";
     public string? Hashtags { get; set; }
+    public string? MediaUrl { get; set; }
 }

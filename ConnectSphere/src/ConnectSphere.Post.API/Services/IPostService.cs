@@ -15,5 +15,6 @@ public interface IPostService
     Task<PostDto> SharePostAsync(int originalPostId, int userId);
     Task<List<PostDto>> GetPublicFeedAsync();
     Task IncrementCommentCountAsync(int postId);
+    Task SyncLikeCountAsync(int postId, int count);
     Task AdminDeletePostAsync(int postId);
 }

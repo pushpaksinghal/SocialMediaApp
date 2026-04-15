@@ -44,6 +44,12 @@ builder.Services.AddHttpClient<NotifServiceClient>(client =>
     client.BaseAddress = new Uri(
         builder.Configuration["Services:NotifService"]!);
 });
+
+builder.Services.AddHttpClient<PostServiceClient>(client =>
+{
+    client.BaseAddress = new Uri(
+        builder.Configuration["Services:PostService"]!);
+});
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

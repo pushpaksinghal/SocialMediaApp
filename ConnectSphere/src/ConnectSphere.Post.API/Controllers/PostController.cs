@@ -81,7 +81,7 @@ public class PostController : ControllerBase
         {
             return NotFound(new { message = ex.Message });
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
@@ -117,7 +117,6 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/search?q=
-    [Authorize]
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string q)
     {
@@ -171,11 +170,18 @@ public class PostController : ControllerBase
         await _postService.AdminDeletePostAsync(id);
         return NoContent();
     }
-    // POST /api/posts/{id}/increment-comment
     [HttpPost("{id:int}/increment-comment")]
     public async Task<IActionResult> IncrementCommentCount(int id)
     {
         await _postService.IncrementCommentCountAsync(id);
+        return Ok();
+    }
+
+    // POST /api/posts/{id}/sync-likes?count=
+    [HttpPost("{id:int}/sync-likes")]
+    public async Task<IActionResult> SyncLikeCount(int id, [FromQuery] int count)
+    {
+        await _postService.SyncLikeCountAsync(id, count);
         return Ok();
     }
 }

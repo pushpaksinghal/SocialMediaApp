@@ -40,4 +40,48 @@ public class AuthServiceClient
         await _httpClient.PostAsync(
             $"/api/auth/decrement-post/{userId}", null);
     }
+
+    /// <summary>
+    /// Batch-fetch user profiles by their IDs from the Auth service.
+    /// Returns a dictionary keyed by UserId for O(1) lookup.
+    /// </summary>
+    public async Task<Dictionary<int, AuthUserDto>> GetUsersByIdsAsync(
+        IEnumerable<int> userIds)
+    {
+        var ids = userIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return new Dictionary<int, AuthUserDto>();
+
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(
+                "/api/auth/users/batch", ids);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Batch user lookup failed: {Status}", response.StatusCode);
+                return new Dictionary<int, AuthUserDto>();
+            }
+
+            var users = await response.Content
+                .ReadFromJsonAsync<List<AuthUserDto>>()
+                ?? new List<AuthUserDto>();
+
+            return users.ToDictionary(u => u.UserId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                "Batch user lookup exception: {Message}", ex.Message);
+            return new Dictionary<int, AuthUserDto>();
+        }
+    }
 }
+
+/// <summary>Minimal projection of UserProfileDto returned by Auth API.</summary>
+public record AuthUserDto(
+    int    UserId,
+    string UserName,
+    string FullName,
+    string? AvatarUrl);

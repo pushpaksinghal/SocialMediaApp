@@ -40,7 +40,12 @@ public class PostService : IPostService
             CreatedAt  = DateTime.UtcNow
         };
 
-        if (media is not null)
+        if (!string.IsNullOrEmpty(request.MediaUrl))
+        {
+            post.MediaUrl = request.MediaUrl;
+            post.MediaType = ResolveMediaTypeByExtension(request.MediaUrl);
+        }
+        else if (media is not null)
         {
             try
             {
@@ -60,7 +65,9 @@ public class PostService : IPostService
         // Increment post count on user
         _ = _authClient.IncrementPostCountAsync(userId, accessToken);
 
-        return MapToDto(post);
+        var dto = MapToDto(post);
+        await EnrichWithAuthorsAsync(new[] { dto });
+        return dto;
     }
 
     // ── Get Post By ID ───────────────────────────────────────────────────────
@@ -76,7 +83,9 @@ public class PostService : IPostService
         if (requestingUserId is null && post.Visibility != "PUBLIC")
             return null;
 
-        return MapToDto(post);
+        var dto = MapToDto(post);
+        await EnrichWithAuthorsAsync(new[] { dto });
+        return dto;
     }
 
     // ── Get Posts By User ────────────────────────────────────────────────────
@@ -98,7 +107,9 @@ public class PostService : IPostService
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
 
-        return posts.Select(MapToDto).ToList();
+        var dtos = posts.Select(MapToDto).ToList();
+        await EnrichWithAuthorsAsync(dtos);
+        return dtos;
     }
 
     // ── Update Post ──────────────────────────────────────────────────────────
@@ -118,7 +129,9 @@ public class PostService : IPostService
         post.UpdatedAt  = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
-        return MapToDto(post);
+        var dto = MapToDto(post);
+        await EnrichWithAuthorsAsync(new[] { dto });
+        return dto;
     }
 
     // ── Soft Delete ──────────────────────────────────────────────────────────
@@ -154,7 +167,9 @@ public class PostService : IPostService
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync();
 
-        return posts.Select(MapToDto).ToList();
+        var dtos = posts.Select(MapToDto).ToList();
+        await EnrichWithAuthorsAsync(dtos);
+        return dtos;
     }
 
     // ── Search Posts ─────────────────────────────────────────────────────────
@@ -169,7 +184,9 @@ public class PostService : IPostService
             .Take(20)
             .ToListAsync();
 
-        return posts.Select(MapToDto).ToList();
+        var dtos = posts.Select(MapToDto).ToList();
+        await EnrichWithAuthorsAsync(dtos);
+        return dtos;
     }
 
     // ── Trending Posts ───────────────────────────────────────────────────────
@@ -187,7 +204,9 @@ public class PostService : IPostService
             .Take(20)
             .ToListAsync();
 
-        return posts.Select(MapToDto).ToList();
+        var dtos = posts.Select(MapToDto).ToList();
+        await EnrichWithAuthorsAsync(dtos);
+        return dtos;
     }
 
     // ── Share / Repost ───────────────────────────────────────────────────────
@@ -216,7 +235,9 @@ public class PostService : IPostService
         _db.Posts.Add(repost);
         await _db.SaveChangesAsync();
 
-        return MapToDto(repost);
+        var dto = MapToDto(repost);
+        await EnrichWithAuthorsAsync(new[] { dto });
+        return dto;
     }
 
     // ── Public Feed ──────────────────────────────────────────────────────────
@@ -229,7 +250,9 @@ public class PostService : IPostService
             .Take(50)
             .ToListAsync();
 
-        return posts.Select(MapToDto).ToList();
+        var dtos = posts.Select(MapToDto).ToList();
+        await EnrichWithAuthorsAsync(dtos);
+        return dtos;
     }
 
     // ── Increment Comment Count (called by Comment service) ──────────────────
@@ -239,6 +262,14 @@ public class PostService : IPostService
             .Where(p => p.PostId == postId)
             .ExecuteUpdateAsync(s => s.SetProperty(
                 p => p.CommentCount, p => p.CommentCount + 1));
+    }
+
+    public async Task SyncLikeCountAsync(int postId, int count)
+    {
+        await _db.Posts
+            .Where(p => p.PostId == postId)
+            .ExecuteUpdateAsync(s => s.SetProperty(
+                p => p.LikeCount, count));
     }
 
     // ── Admin Delete ─────────────────────────────────────────────────────────
@@ -253,6 +284,28 @@ public class PostService : IPostService
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+    private async Task EnrichWithAuthorsAsync(IEnumerable<PostDto> dtos)
+    {
+        var list = dtos.ToList();
+        if (list.Count == 0) return;
+
+        var uniqueIds = list.Select(d => d.UserId).Distinct();
+        var userMap   = await _authClient.GetUsersByIdsAsync(uniqueIds);
+
+        foreach (var dto in list)
+        {
+            if (userMap.TryGetValue(dto.UserId, out var u))
+            {
+                dto.Author = new PostAuthorDto
+                {
+                    UserName  = u.UserName,
+                    FullName  = u.FullName,
+                    AvatarUrl = u.AvatarUrl
+                };
+            }
+        }
+    }
+
     private async Task<string> UploadMediaAsync(int userId, IFormFile file)
     {
         var connStr   = _config["AzureBlob:ConnectionString"]!;
@@ -270,6 +323,17 @@ public class PostService : IPostService
         return blob.Uri.ToString();
     }
 
+    private static string ResolveMediaTypeByExtension(string url)
+    {
+        var ext = Path.GetExtension(url).ToLower();
+        return ext switch
+        {
+            ".mp4" or ".mov" or ".avi" or ".webm" => "VIDEO",
+            ".gif" => "GIF",
+            _ => "IMAGE"
+        };
+    }
+
     private static string ResolveMediaType(string contentType) =>
         contentType switch
         {
@@ -279,7 +343,7 @@ public class PostService : IPostService
             _                                     => "IMAGE"
         };
 
-    private static PostDto MapToDto(Models.Post p) => new()
+    private PostDto MapToDto(Models.Post p) => new()
     {
         PostId         = p.PostId,
         UserId         = p.UserId,

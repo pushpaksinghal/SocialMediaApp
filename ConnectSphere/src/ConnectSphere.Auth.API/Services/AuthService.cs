@@ -207,7 +207,8 @@ public class AuthService : IAuthService
         string email,
         string fullName,
         string userName,
-        string provider)
+        string provider,
+        string? avatarUrl = null)
     {
         // Check if user already exists with this email
         var user = await _db.Users
@@ -234,6 +235,7 @@ public class AuthService : IAuthService
                 Email        = email,
                 FullName     = fullName,
                 UserName     = finalUserName,
+                AvatarUrl    = avatarUrl,
                 PasswordHash = string.Empty, // No password for OAuth users
                 IsActive     = true,
                 CreatedAt    = DateTime.UtcNow
@@ -340,4 +342,27 @@ public class AuthService : IAuthService
                 u => u.PostCount,
                 u => u.PostCount + delta));
     }
-}
+
+    // ── Get Profile By ID ─────────────────────────────────────────────────────
+    public async Task<UserProfileDto?> GetProfileByIdAsync(int userId)
+    {
+        var user = await _db.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.UserId == userId);
+
+        return user is null ? null : MapToDto(user);
+    }
+
+    // ── Get Profiles By IDs (batch) ───────────────────────────────────────────
+    public async Task<List<UserProfileDto>> GetProfilesByIdsAsync(
+        IEnumerable<int> userIds)
+    {
+        var ids = userIds.Distinct().ToList();
+        var users = await _db.Users
+            .AsNoTracking()
+            .Where(u => ids.Contains(u.UserId))
+            .ToListAsync();
+
+        return users.Select(MapToDto).ToList();
+    }
+}

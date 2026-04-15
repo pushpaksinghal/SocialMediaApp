@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Text.Json;
 
 namespace ConnectSphere.Auth.API.Controllers;
 
@@ -14,10 +16,12 @@ namespace ConnectSphere.Auth.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IConfiguration _config;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IConfiguration config)
     {
         _authService = authService;
+        _config = config;
     }
 
     // POST /api/auth/register
@@ -228,19 +232,30 @@ public class AuthController : ControllerBase
             c.Type == ClaimTypes.GivenName)?.Value
             ?? email.Split('@')[0];
 
+        var avatarUrl = claims.FirstOrDefault(c => c.Type == "picture")?.Value 
+            ?? claims.FirstOrDefault(c => c.Type == "image")?.Value;
+
         if (string.IsNullOrEmpty(email))
             return BadRequest(new { message = "Could not retrieve email from Google." });
 
         try
         {
             var response = await _authService.ExternalLoginAsync(
-                email, fullName, userName, "Google");
+                email, fullName, userName, "Google", avatarUrl);
 
             // Sign out of cookie session — we use JWT from here
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
 
-            return Ok(response);
+            var frontendUrl = _config["Cors:AllowedOrigin"] ?? "http://localhost:4200";
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var userJson = JsonSerializer.Serialize(response.User, options);
+            var redirectUrl = $"{frontendUrl}/auth/callback?" +
+                              $"accessToken={response.AccessToken}&" +
+                              $"refreshToken={response.RefreshToken}&" +
+                              $"user={Uri.EscapeDataString(userJson)}";
+
+            return Redirect(redirectUrl);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -280,11 +295,17 @@ public class AuthController : ControllerBase
             c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
 
         var fullName = claims.FirstOrDefault(c =>
-            c.Type == ClaimTypes.Name)?.Value ?? string.Empty;
-
+            c.Type == ClaimTypes.Name)?.Value 
+            ?? claims.FirstOrDefault(c => c.Type == "name")?.Value
+            ?? string.Empty;
+ 
         var userName = claims.FirstOrDefault(c =>
             c.Type == "urn:github:login")?.Value
+            ?? claims.FirstOrDefault(c => c.Type == "login")?.Value
             ?? email.Split('@')[0];
+
+        var avatarUrl = claims.FirstOrDefault(c => c.Type == "urn:github:avatar")?.Value 
+            ?? claims.FirstOrDefault(c => c.Type == "avatar_url")?.Value;
 
         if (string.IsNullOrEmpty(email))
             return BadRequest(new
@@ -295,12 +316,20 @@ public class AuthController : ControllerBase
         try
         {
             var response = await _authService.ExternalLoginAsync(
-                email, fullName, userName, "GitHub");
+                email, fullName, userName, "GitHub", avatarUrl);
 
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
 
-            return Ok(response);
+            var frontendUrl = _config["Cors:AllowedOrigin"] ?? "http://localhost:4200";
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var userJson = JsonSerializer.Serialize(response.User, options);
+            var redirectUrl = $"{frontendUrl}/auth/callback?" +
+                              $"accessToken={response.AccessToken}&" +
+                              $"refreshToken={response.RefreshToken}&" +
+                              $"user={Uri.EscapeDataString(userJson)}";
+
+            return Redirect(redirectUrl);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -337,4 +366,26 @@ public class AuthController : ControllerBase
         await _authService.UpdatePostCountAsync(userId, increment: false);
         return Ok();
     }
-}
+
+    // GET /api/auth/userid/{id}  — internal: lookup by numeric user ID
+    [HttpGet("userid/{id:int}")]
+    public async Task<IActionResult> GetProfileById(int id)
+    {
+        var profile = await _authService.GetProfileByIdAsync(id);
+        if (profile is null)
+            return NotFound(new { message = "User not found." });
+
+        return Ok(profile);
+    }
+
+    // POST /api/auth/users/batch  — internal: batch lookup by list of IDs
+    [HttpPost("users/batch")]
+    public async Task<IActionResult> GetProfilesBatch([FromBody] List<int> ids)
+    {
+        if (ids == null || ids.Count == 0)
+            return Ok(new List<object>());
+
+        var profiles = await _authService.GetProfilesByIdsAsync(ids);
+        return Ok(profiles);
+    }
+}

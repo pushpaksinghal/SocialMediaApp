@@ -16,4 +16,15 @@ public class PostDto
     public int? OriginalPostId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+
+    // ── Enriched fields (populated by the service layer) ──────────
+    public PostAuthorDto? Author { get; set; }
+    public bool IsLiked { get; set; }
+}
+
+public class PostAuthorDto
+{
+    public string UserName { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
 }

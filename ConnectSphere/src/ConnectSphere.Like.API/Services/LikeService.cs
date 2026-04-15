@@ -10,13 +10,17 @@ public class LikeService : ILikeService
     private readonly LikeDbContext _db;
 
     private readonly NotifServiceClient _notifClient;
+    private readonly PostServiceClient _postClient;
     private readonly ILogger<LikeService> _logger;
 
     public LikeService(LikeDbContext db,
-        NotifServiceClient notifClient, ILogger<LikeService> logger)
+        NotifServiceClient notifClient,
+        PostServiceClient postClient,
+        ILogger<LikeService> logger)
     {
         _db = db;
         _notifClient= notifClient;
+        _postClient = postClient;
         _logger = logger;
     }
 
@@ -57,6 +61,12 @@ public class LikeService : ILikeService
 
             var count = await GetLikeCountAsync(
                 request.TargetId, request.TargetType);
+
+            // Sync like count to the target service (e.g. Post API)
+            if (request.TargetType == "POST")
+            {
+                _ = _postClient.SyncLikeCountAsync(request.TargetId, count);
+            }
 
             // Send notification only when liking not unliking
             if (liked)

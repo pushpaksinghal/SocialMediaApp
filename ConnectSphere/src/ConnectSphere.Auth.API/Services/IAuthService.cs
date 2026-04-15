@@ -18,11 +18,14 @@ public interface IAuthService
     Task DeactivateAccountAsync(int userId);
 
     Task<ExternalAuthResponse> ExternalLoginAsync(
-    string email,
-    string fullName,
-    string userName,
-    string provider);
+        string email,
+        string fullName,
+        string userName,
+        string provider,
+        string? avatarUrl = null);
 
     Task UpdateFollowCountsAsync(int followerId, int followeeId, bool increment);
     Task UpdatePostCountAsync(int userId, bool increment);
+    Task<UserProfileDto?> GetProfileByIdAsync(int userId);
+    Task<List<UserProfileDto>> GetProfilesByIdsAsync(IEnumerable<int> userIds);
 }
