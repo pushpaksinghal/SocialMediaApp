@@ -11,7 +11,7 @@ public class AuthService : IAuthService
 {
     private readonly AuthDbContext _db;
     private readonly ITokenService _tokenService;
-    private readonly PasswordHasher<User> _hasher;
+    private readonly PasswordHasher<User>  _hasher;
     private readonly IConfiguration _config;
     private readonly ILogger<AuthService> _logger;
 
@@ -365,4 +365,4 @@ public class AuthService : IAuthService
 
         return users.Select(MapToDto).ToList();
     }
-}
+}

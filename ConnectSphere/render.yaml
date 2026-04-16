@@ -1,0 +1,202 @@
+# render.yaml - ConnectSphere Microservices Blueprint
+# This file deploys all 8 services (Gateway + 7 Microservices) + PostgreSQL database
+
+services:
+  # ============================================
+  # 0. API GATEWAY - Main entry point
+  # ============================================
+  - type: web
+    name: connectsphere-gateway-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Gateway/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: JWT__Key
+        sync: false
+      - key: JWT__Issuer
+        value: https://connectsphere-auth-api.onrender.com
+      - key: JWT__Audience
+        value: https://connectsphere-frontend.vercel.app
+      - key: Cors__AllowedOrigin
+        value: https://connectsphere-frontend.vercel.app
+
+  # ============================================
+  # 1. AUTH API - Authentication & User Management
+  # ============================================
+  - type: web
+    name: connectsphere-auth-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Auth.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: JWT__Key
+        sync: false
+      - key: JWT__Issuer
+        value: https://connectsphere-auth-api.onrender.com
+      - key: JWT__Audience
+        value: https://connectsphere-frontend.vercel.app
+      - key: Google__ClientId
+        sync: false
+      - key: Google__ClientSecret
+        sync: false
+      - key: GitHub__ClientId
+        sync: false
+      - key: GitHub__ClientSecret
+        sync: false
+      - key: Cors__AllowedOrigin
+        value: https://connectsphere-gateway-api.onrender.com
+
+  # ============================================
+  # 2. POST API - Post Management with Cloudinary
+  # ============================================
+  - type: web
+    name: connectsphere-post-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Post.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: Cloudinary__CloudName
+        sync: false
+      - key: Cloudinary__ApiKey
+        sync: false
+      - key: Cloudinary__ApiSecret
+        sync: false
+      - key: AuthApi__BaseUrl
+        value: https://connectsphere-auth-api.onrender.com
+
+  # ============================================
+  # 3. COMMENT API - Comment Management
+  # ============================================
+  - type: web
+    name: connectsphere-comment-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Comment.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: NotifApi__BaseUrl
+        value: https://connectsphere-notif-api.onrender.com
+      - key: PostApi__BaseUrl
+        value: https://connectsphere-post-api.onrender.com
+
+  # ============================================
+  # 4. LIKE API - Like/Unlike Posts
+  # ============================================
+  - type: web
+    name: connectsphere-like-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Like.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: NotifApi__BaseUrl
+        value: https://connectsphere-notif-api.onrender.com
+      - key: PostApi__BaseUrl
+        value: https://connectsphere-post-api.onrender.com
+
+  # ============================================
+  # 5. FOLLOW API - Follow/Unfollow Users
+  # ============================================
+  - type: web
+    name: connectsphere-follow-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Follow.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: NotifApi__BaseUrl
+        value: https://connectsphere-notif-api.onrender.com
+      - key: AuthApi__BaseUrl
+        value: https://connectsphere-auth-api.onrender.com
+
+  # ============================================
+  # 6. FEED API - Personalized Feed with Redis
+  # ============================================
+  - type: web
+    name: connectsphere-feed-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Feed.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+      - key: Redis__ConnectionString
+        sync: false
+      - key: FollowApi__BaseUrl
+        value: https://connectsphere-follow-api.onrender.com
+      - key: PostApi__BaseUrl
+        value: https://connectsphere-post-api.onrender.com
+
+  # ============================================
+  # 7. NOTIFICATION API - Push Notifications
+  # ============================================
+  - type: web
+    name: connectsphere-notif-api
+    runtime: image
+    repo: https://github.com/pushpaksinghal/SocialMediaApp
+    plan: free
+    dockerfilePath: ./src/ConnectSphere.Notif.API/Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: connectsphere-db
+          property: connectionString
+
+# ============================================
+# DATABASE - Single PostgreSQL for all services
+# ============================================
+databases:
+  - name: connectsphere-db
+    databaseName: connectsphere
+    plan: free
+    postgresMajorVersion: 16
