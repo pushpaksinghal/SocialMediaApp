@@ -24,6 +24,13 @@ public class FollowController : ControllerBase
             .ToString()["Bearer ".Length..].Trim();
 
     // POST /api/follows
+    /// <summary>
+    /// Follows a user or sends a follow request.
+    /// </summary>
+    /// <param name="request">The follow request containing FolloweeId.</param>
+    /// <returns>The created follow relationship or request.</returns>
+    /// <response code="201">Follow relationship or request created.</response>
+    /// <response code="409">Conflict (e.g., already following or pending).</response>
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> Follow([FromBody] FollowRequest request)
@@ -41,6 +48,14 @@ public class FollowController : ControllerBase
     }
 
     // PUT /api/follows/{id}/accept
+    /// <summary>
+    /// Accepts a pending follow request.
+    /// </summary>
+    /// <param name="id">The follow request ID.</param>
+    /// <returns>The updated follow relationship.</returns>
+    /// <response code="200">Request accepted.</response>
+    /// <response code="400">Invalid request state.</response>
+    /// <response code="404">Request not found.</response>
     [Authorize]
     [HttpPut("{id:int}/accept")]
     public async Task<IActionResult> Accept(int id)
@@ -62,6 +77,13 @@ public class FollowController : ControllerBase
     }
 
     // DELETE /api/follows/{followeeId}
+    /// <summary>
+    /// Unfollows a user.
+    /// </summary>
+    /// <param name="followeeId">The ID of the user to unfollow.</param>
+    /// <returns>No content.</returns>
+    /// <response code="204">Unfollowed successfully.</response>
+    /// <response code="404">Relationship not found.</response>
     [Authorize]
     [HttpDelete("{followeeId:int}")]
     public async Task<IActionResult> Unfollow(int followeeId)
@@ -78,6 +100,13 @@ public class FollowController : ControllerBase
         }
     }
     // PUT /api/follows/{id}/reject
+    /// <summary>
+    /// Rejects a pending follow request.
+    /// </summary>
+    /// <param name="id">The follow request ID.</param>
+    /// <returns>The updated follow relationship (rejected state).</returns>
+    /// <response code="200">Request rejected.</response>
+    /// <response code="404">Request not found.</response>
     [Authorize]
     [HttpPut("{id:int}/reject")]
     public async Task<IActionResult> Reject(int id)
@@ -95,6 +124,11 @@ public class FollowController : ControllerBase
     }
 
     // GET /api/follows/{userId}/followers
+    /// <summary>
+    /// Retrieves the list of followers for a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of followers.</returns>
     [Authorize]
     [HttpGet("{userId:int}/followers")]
     public async Task<IActionResult> GetFollowers(int userId)
@@ -104,6 +138,11 @@ public class FollowController : ControllerBase
     }
 
     // GET /api/follows/{userId}/following
+    /// <summary>
+    /// Retrieves the list of users a specific user is following.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of users being followed.</returns>
     [Authorize]
     [HttpGet("{userId:int}/following")]
     public async Task<IActionResult> GetFollowing(int userId)
@@ -113,6 +152,10 @@ public class FollowController : ControllerBase
     }
 
     // GET /api/follows/pending
+    /// <summary>
+    /// Retrieves all pending follow requests for the current user.
+    /// </summary>
+    /// <returns>A list of pending follow requests.</returns>
     [Authorize]
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending()
@@ -122,6 +165,11 @@ public class FollowController : ControllerBase
     }
 
     // GET /api/follows/is/{followeeId}
+    /// <summary>
+    /// Checks if the current user is following another user.
+    /// </summary>
+    /// <param name="followeeId">The ID of the user to check.</param>
+    /// <returns>A boolean status.</returns>
     [Authorize]
     [HttpGet("is/{followeeId:int}")]
     public async Task<IActionResult> IsFollowing(int followeeId)
@@ -133,6 +181,11 @@ public class FollowController : ControllerBase
 
 
     // GET /api/follows/ids/{userId}
+    /// <summary>
+    /// Retrieves the IDs of all users a specific user is following.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of user IDs.</returns>
     [Authorize]
     [HttpGet("ids/{userId:int}")]
     public async Task<IActionResult> GetFollowingIds(int userId)
@@ -142,6 +195,12 @@ public class FollowController : ControllerBase
     }
 
     // GET /api/follows/mutual/{userIdA}/{userIdB}
+    /// <summary>
+    /// Retrieves mutual followers between two users.
+    /// </summary>
+    /// <param name="userIdA">First user ID.</param>
+    /// <param name="userIdB">Second user ID.</param>
+    /// <returns>A list of mutual followers.</returns>
     [Authorize]
     [HttpGet("mutual/{userIdA:int}/{userIdB:int}")]
     public async Task<IActionResult> GetMutual(int userIdA, int userIdB)

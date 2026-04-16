@@ -24,6 +24,13 @@ public class FeedController : ControllerBase
             .ToString()["Bearer ".Length..].Trim();
 
     // GET /api/feed/{userId}?page=1&size=20
+    /// <summary>
+    /// Retrieves the home feed for a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <param name="page">The page number for pagination.</param>
+    /// <param name="size">The number of items per page.</param>
+    /// <returns>A list of posts for the home feed.</returns>
     [Authorize]
     [HttpGet("{userId:int}")]
     public async Task<IActionResult> GetHomeFeed(
@@ -37,6 +44,11 @@ public class FeedController : ControllerBase
     }
 
     // GET /api/feed/explore/{userId}
+    /// <summary>
+    /// Retrieves the explore feed for a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of recommended posts.</returns>
     [Authorize]
     [HttpGet("explore/{userId:int}")]
     public async Task<IActionResult> GetExploreFeed(int userId)
@@ -47,6 +59,11 @@ public class FeedController : ControllerBase
     }
 
     // GET /api/feed/timeline/{userId}
+    /// <summary>
+    /// Retrieves the timeline of posts for a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of posts made by the user.</returns>
     [HttpGet("timeline/{userId:int}")]
     public async Task<IActionResult> GetTimeline(int userId)
     {
@@ -55,6 +72,11 @@ public class FeedController : ControllerBase
     }
 
     // GET /api/feed/trending-hashtags?n=10
+    /// <summary>
+    /// Retrieves the most popular hashtags.
+    /// </summary>
+    /// <param name="n">The number of hashtags to return.</param>
+    /// <returns>A list of trending hashtags.</returns>
     [HttpGet("trending-hashtags")]
     public async Task<IActionResult> GetTrendingHashtags(
         [FromQuery] int n = 10)
@@ -64,6 +86,11 @@ public class FeedController : ControllerBase
     }
 
     // DELETE /api/feed/cache/{userId}
+    /// <summary>
+    /// Invalidates the feed cache for a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A success message.</returns>
     [Authorize]
     [HttpDelete("cache/{userId:int}")]
     public async Task<IActionResult> InvalidateCache(int userId)

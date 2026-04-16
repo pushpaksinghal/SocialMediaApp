@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using ConnectSphere.Follow.API.Data;
 using ConnectSphere.Follow.API.HttpClients;
@@ -9,12 +10,34 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ========== ADD THIS: RENDER PORT CONFIGURATION ==========
+// Render sets the PORT environment variable
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+    
+    // Configure Kestrel for Render (only if PORT is set)
+    builder.WebHost.ConfigureKestrel(serverOptions =>
+    {
+        serverOptions.ListenAnyIP(int.Parse(port));
+    });
+}
+// ==========================================================
+
 // ── Database ──────────────────────────────────────────────────────────────────
+// UPDATED: Use environment variable for connection string (Render friendly)
+var connectionString = builder.Configuration.GetConnectionString("Default") 
+    ?? builder.Configuration.GetConnectionString("FollowDb");
+
 builder.Services.AddDbContext<FollowDbContext>(options =>
-    options.UseNpgsql(
-        builder.Configuration.GetConnectionString("FollowDb")));
+    options.UseNpgsql(connectionString));
 
 // ── JWT Auth ──────────────────────────────────────────────────────────────────
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? builder.Configuration["JWT__Key"];
+if (string.IsNullOrEmpty(jwtSecret))
+    throw new Exception("JWT Secret not configured");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -27,9 +50,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer              = builder.Configuration["Jwt:Issuer"],
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey         = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(
-                    builder.Configuration["Jwt:Secret"]!)),
+                Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew                = TimeSpan.Zero
+        };
+        
+        // ADDED: Better error handling for Render
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                Console.WriteLine($"Challenge: {context.Error}");
+                return Task.CompletedTask;
+            }
         };
     });
 
@@ -39,17 +76,27 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IFollowService, FollowService>();
 
 // ── HTTP Clients ──────────────────────────────────────────────────────────────
+// UPDATED: Use environment variables for service URLs
+var notifServiceUrl = builder.Configuration["Services:NotifService"] 
+    ?? Environment.GetEnvironmentVariable("NotifApi__BaseUrl")
+    ?? "https://connectsphere-notif-api.onrender.com";
+
 builder.Services.AddHttpClient<NotifServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:NotifService"]!);
+    client.BaseAddress = new Uri(notifServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
+
+var authServiceUrl = builder.Configuration["Services:AuthService"] 
+    ?? Environment.GetEnvironmentVariable("AuthApi__BaseUrl")
+    ?? "https://connectsphere-auth-api.onrender.com";
 
 builder.Services.AddHttpClient<AuthServiceClient>(client =>
 {
-    client.BaseAddress = new Uri(
-        builder.Configuration["Services:AuthService"]!);
+    client.BaseAddress = new Uri(authServiceUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
+
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -85,19 +132,31 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
+var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] 
+    ?? builder.Configuration["CORS__ALLOWEDORIGIN"]
+    ?? "https://connectsphere-frontend.vercel.app";  // Default for production
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(
-                builder.Configuration["Cors:AllowedOrigin"]!)
+        policy.WithOrigins(allowedOrigin)
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
+
+// ADDED: Health check endpoint for Render
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -107,8 +166,15 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // ADDED: Redirect HTTP to HTTPS in production
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
+// ADDED: Health check endpoint
+app.MapHealthChecks("/health");
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -118,7 +184,16 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<FollowDbContext>();
-    await db.Database.MigrateAsync();
+    try
+    {
+        await db.Database.MigrateAsync();
+        Console.WriteLine("Follow database migration completed successfully");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Follow database migration failed: {ex.Message}");
+        // Don't throw - let the app start anyway
+    }
 }
 
 app.Run();

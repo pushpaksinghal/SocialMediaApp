@@ -21,6 +21,13 @@ public class CommentController : ControllerBase
         int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     // POST /api/comments
+    /// <summary>
+    /// Adds a new comment to a post.
+    /// </summary>
+    /// <param name="request">The comment details (postId and content).</param>
+    /// <returns>The created comment.</returns>
+    /// <response code="201">Returns the newly created comment.</response>
+    /// <response code="401">Unauthorized.</response>
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> AddComment(
@@ -36,6 +43,13 @@ public class CommentController : ControllerBase
     }
 
     // GET /api/comments/{id}
+    /// <summary>
+    /// Retrieves a single comment by its ID.
+    /// </summary>
+    /// <param name="id">The comment ID.</param>
+    /// <returns>The comment profile.</returns>
+    /// <response code="200">Comment found.</response>
+    /// <response code="404">Comment not found.</response>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetComment(int id)
     {
@@ -47,6 +61,11 @@ public class CommentController : ControllerBase
     }
 
     // GET /api/comments/post/{id}
+    /// <summary>
+    /// Retrieves all comments for a specific post.
+    /// </summary>
+    /// <param name="id">The post ID.</param>
+    /// <returns>A list of comments.</returns>
     [HttpGet("post/{id:int}")]
     public async Task<IActionResult> GetByPost(int id)
     {
@@ -55,6 +74,11 @@ public class CommentController : ControllerBase
     }
 
     // GET /api/comments/toplevel/{postId}
+    /// <summary>
+    /// Retrieves top-level comments (not replies) for a post.
+    /// </summary>
+    /// <param name="postId">The post ID.</param>
+    /// <returns>A list of top-level comments.</returns>
     [HttpGet("toplevel/{postId:int}")]
     public async Task<IActionResult> GetTopLevel(int postId)
     {
@@ -63,6 +87,11 @@ public class CommentController : ControllerBase
     }
 
     // GET /api/comments/replies/{commentId}
+    /// <summary>
+    /// Retrieves all replies to a specific comment.
+    /// </summary>
+    /// <param name="commentId">The parent comment ID.</param>
+    /// <returns>A list of reply comments.</returns>
     [HttpGet("replies/{commentId:int}")]
     public async Task<IActionResult> GetReplies(int commentId)
     {
@@ -71,6 +100,15 @@ public class CommentController : ControllerBase
     }
 
     // PUT /api/comments/{id}
+    /// <summary>
+    /// Edits an existing comment.
+    /// </summary>
+    /// <param name="id">The comment ID.</param>
+    /// <param name="request">The updated comment content.</param>
+    /// <returns>The updated comment.</returns>
+    /// <response code="200">Comment updated.</response>
+    /// <response code="403">If the user is not the author of the comment.</response>
+    /// <response code="404">Comment not found.</response>
     [Authorize]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> EditComment(
@@ -93,6 +131,14 @@ public class CommentController : ControllerBase
     }
 
     // DELETE /api/comments/{id}
+    /// <summary>
+    /// Deletes a comment.
+    /// </summary>
+    /// <param name="id">The comment ID.</param>
+    /// <returns>No content.</returns>
+    /// <response code="204">Comment deleted.</response>
+    /// <response code="403">If the user is not the author.</response>
+    /// <response code="404">Comment not found.</response>
     [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteComment(int id)
@@ -113,6 +159,11 @@ public class CommentController : ControllerBase
     }
 
     // GET /api/comments/count/{postId}
+    /// <summary>
+    /// Gets the total number of comments for a post.
+    /// </summary>
+    /// <param name="postId">The post ID.</param>
+    /// <returns>The comment count.</returns>
     [HttpGet("count/{postId:int}")]
     public async Task<IActionResult> GetCount(int postId)
     {
@@ -121,6 +172,11 @@ public class CommentController : ControllerBase
     }
 
     // DELETE /api/comments/admin/{id}
+    /// <summary>
+    /// Deletes a comment as an administrator.
+    /// </summary>
+    /// <param name="id">The comment ID.</param>
+    /// <returns>No content.</returns>
     [Authorize(Roles = "Admin")]
     [HttpDelete("admin/{id:int}")]
     public async Task<IActionResult> AdminDelete(int id)

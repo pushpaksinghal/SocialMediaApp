@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text;
 using ConnectSphere.Like.API.Data;
 using ConnectSphere.Like.API.HttpClients;
@@ -85,6 +86,10 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
 });
 
 // ── CORS ──────────────────────────────────────────────────────────────────────

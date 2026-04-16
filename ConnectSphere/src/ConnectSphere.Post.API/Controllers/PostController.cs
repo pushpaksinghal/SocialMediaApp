@@ -27,6 +27,14 @@ public class PostController : ControllerBase
     HttpContext.Request.Headers.Authorization
         .ToString()["Bearer ".Length..].Trim();
 
+    /// <summary>
+    /// Creates a new post with optional media.
+    /// </summary>
+    /// <param name="request">The post content and optional location/tags.</param>
+    /// <param name="media">An optional image or video file.</param>
+    /// <returns>The created post.</returns>
+    /// <response code="201">Returns the newly created post.</response>
+    /// <response code="401">Unauthorized.</response>
     [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreatePost(
@@ -43,6 +51,13 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/{id}
+    /// <summary>
+    /// Retrieves a single post by its ID.
+    /// </summary>
+    /// <param name="id">The post ID.</param>
+    /// <returns>The post details.</returns>
+    /// <response code="200">Post found.</response>
+    /// <response code="404">Post not found.</response>
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetPost(int id)
     {
@@ -54,6 +69,11 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/user/{userId}
+    /// <summary>
+    /// Retrieves all posts created by a specific user.
+    /// </summary>
+    /// <param name="userId">The User ID.</param>
+    /// <returns>A list of posts.</returns>
     [HttpGet("user/{userId:int}")]
     public async Task<IActionResult> GetPostsByUser(int userId)
     {
@@ -64,6 +84,15 @@ public class PostController : ControllerBase
     }
 
     // PUT /api/posts/{id}
+    /// <summary>
+    /// Updates an existing post.
+    /// </summary>
+    /// <param name="id">The post ID.</param>
+    /// <param name="request">The updated post content.</param>
+    /// <returns>The updated post.</returns>
+    /// <response code="200">Post updated.</response>
+    /// <response code="403">If the user is not the author.</response>
+    /// <response code="404">Post not found.</response>
     [Authorize]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdatePost(
@@ -88,6 +117,14 @@ public class PostController : ControllerBase
     }
 
     // DELETE /api/posts/{id}
+    /// <summary>
+    /// Soft deletes a post.
+    /// </summary>
+    /// <param name="id">The post ID.</param>
+    /// <returns>No content.</returns>
+    /// <response code="204">Deleted successfully.</response>
+    /// <response code="403">If the user is not the author.</response>
+    /// <response code="404">Post not found.</response>
     [Authorize]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeletePost(int id)
@@ -109,6 +146,11 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/hashtag/{tag}
+    /// <summary>
+    /// Retrieves posts containing a specific hashtag.
+    /// </summary>
+    /// <param name="tag">The hashtag (without #).</param>
+    /// <returns>A list of posts.</returns>
     [HttpGet("hashtag/{tag}")]
     public async Task<IActionResult> GetByHashtag(string tag)
     {
@@ -117,6 +159,11 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/search?q=
+    /// <summary>
+    /// Searches for posts by content.
+    /// </summary>
+    /// <param name="q">The search query.</param>
+    /// <returns>A list of matching posts.</returns>
     [HttpGet("search")]
     public async Task<IActionResult> Search([FromQuery] string q)
     {
@@ -128,6 +175,10 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/trending
+    /// <summary>
+    /// Retrieves currently trending posts.
+    /// </summary>
+    /// <returns>A list of trending posts.</returns>
     [HttpGet("trending")]
     public async Task<IActionResult> GetTrending()
     {
@@ -136,6 +187,11 @@ public class PostController : ControllerBase
     }
 
     // POST /api/posts/share/{id}
+    /// <summary>
+    /// Shares an existing post (creates a reposte).
+    /// </summary>
+    /// <param name="id">The ID of the post to share.</param>
+    /// <returns>The newly created share post.</returns>
     [Authorize]
     [HttpPost("share/{id:int}")]
     public async Task<IActionResult> SharePost(int id)
@@ -155,6 +211,10 @@ public class PostController : ControllerBase
     }
 
     // GET /api/posts/public
+    /// <summary>
+    /// Retrieves the global public feed.
+    /// </summary>
+    /// <returns>A list of public posts.</returns>
     [HttpGet("public")]
     public async Task<IActionResult> GetPublicFeed()
     {
@@ -163,6 +223,11 @@ public class PostController : ControllerBase
     }
 
     // DELETE /api/posts/admin/{id}
+    /// <summary>
+    /// Deletes a post as an administrator.
+    /// </summary>
+    /// <param name="id">The post ID.</param>
+    /// <returns>No content.</returns>
     [Authorize(Roles = "Admin")]
     [HttpDelete("admin/{id:int}")]
     public async Task<IActionResult> AdminDeletePost(int id)
@@ -170,6 +235,11 @@ public class PostController : ControllerBase
         await _postService.AdminDeletePostAsync(id);
         return NoContent();
     }
+    /// <summary>
+    /// Increments the comment count for a post. (Internal use)
+    /// </summary>
+    /// <param name="id">The Post ID.</param>
+    /// <returns>An Ok result.</returns>
     [HttpPost("{id:int}/increment-comment")]
     public async Task<IActionResult> IncrementCommentCount(int id)
     {
@@ -178,6 +248,12 @@ public class PostController : ControllerBase
     }
 
     // POST /api/posts/{id}/sync-likes?count=
+    /// <summary>
+    /// Synchronizes the like count for a post. (Internal use)
+    /// </summary>
+    /// <param name="id">The Post ID.</param>
+    /// <param name="count">The current like count.</param>
+    /// <returns>An Ok result.</returns>
     [HttpPost("{id:int}/sync-likes")]
     public async Task<IActionResult> SyncLikeCount(int id, [FromQuery] int count)
     {
