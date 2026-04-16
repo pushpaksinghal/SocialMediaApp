@@ -1,5 +1,4 @@
 # render.yaml - ConnectSphere Microservices Blueprint
-# This file deploys all 8 services (Gateway + 7 Microservices) + PostgreSQL database
 
 services:
   # ============================================
@@ -7,7 +6,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-gateway-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Gateway/Dockerfile
@@ -29,7 +28,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-auth-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Auth.API/Dockerfile
@@ -63,7 +62,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-post-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Post.API/Dockerfile
@@ -89,7 +88,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-comment-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Comment.API/Dockerfile
@@ -111,7 +110,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-like-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Like.API/Dockerfile
@@ -133,7 +132,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-follow-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Follow.API/Dockerfile
@@ -155,7 +154,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-feed-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Feed.API/Dockerfile
@@ -179,7 +178,7 @@ services:
   # ============================================
   - type: web
     name: connectsphere-notif-api
-    runtime: image
+    runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
     dockerfilePath: ./src/ConnectSphere.Notif.API/Dockerfile
