@@ -9,7 +9,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Gateway/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Gateway/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -31,7 +31,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Auth.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Auth.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -65,7 +65,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Post.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Post.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -91,7 +91,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Comment.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Comment.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -113,7 +113,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Like.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Like.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -135,7 +135,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Follow.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Follow.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -157,7 +157,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Feed.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Feed.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
@@ -181,7 +181,7 @@ services:
     runtime: docker
     repo: https://github.com/pushpaksinghal/SocialMediaApp
     plan: free
-    dockerfilePath: src/ConnectSphere.Notif.API/Dockerfile
+    dockerfilePath: ConnectSphere/src/ConnectSphere.Notif.API/Dockerfile
     healthCheckPath: /health
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
