@@ -1,161 +1,182 @@
 # ConnectSphere Backend
 
-## Overview
+## Introduction
 
-ConnectSphere backend is a microservices-based architecture built using .NET. Each service is independently deployable and communicates over HTTP.
+The ConnectSphere backend is designed using a microservices architecture to ensure scalability, modularity, and independent deployment of core features. Instead of building a monolithic system, each domain concern such as authentication, post management, and user interactions is separated into its own service.
 
-### Services Included
-
-* Auth Service (JWT Authentication)
-* Post Service (Create & Manage Posts)
-* Like Service (Like/Unlike functionality)
+This approach allows each service to evolve independently, improves maintainability, and reflects real-world production system design patterns.
 
 ---
 
-## Tech Stack
+## Architecture Overview
 
-* .NET 8 Web API
-* Entity Framework Core
-* SQL Server / PostgreSQL (depending on setup)
-* JWT Authentication
-* Docker
+The backend consists of multiple independent services:
 
----
+* **Auth Service** – Handles user authentication and authorization using JWT
+* **Post Service** – Manages post creation, retrieval, and storage
+* **Like Service** – Handles user interactions such as liking/unliking posts
 
-## Project Structure
+Each service:
 
-```
-/src
-  /AuthService
-  /PostService
-  /LikeService
-```
+* Runs independently
+* Has its own API endpoints
+* Communicates over HTTP
+* Can be deployed separately
 
 ---
 
-## Prerequisites
+## Technology Stack
 
-* .NET SDK 8+
-* Docker
-* Git
+The backend is built using modern .NET technologies:
+
+* **.NET 8 Web API** – Core framework for building REST APIs
+* **Entity Framework Core** – ORM for database interaction
+* **JWT Authentication** – Secure user authentication
+* **Docker** – Containerization for consistent deployment
+* **REST Architecture** – Standard communication between services
 
 ---
 
-## Running Locally
+## Service Breakdown
 
-### 1. Clone Repository
+### 1. Auth Service
 
-```
-git clone <your-backend-repo-url>
-cd backend
-```
+The Auth Service is responsible for managing user identity and security.
 
-### 2. Run Each Service
+#### Responsibilities:
 
-Navigate into each service folder:
+* User registration and login
+* Google OAuth integration (if configured)
+* JWT token generation
+* Token validation for protected endpoints
 
-```
-cd AuthService
+#### Key Concepts:
+
+* Stateless authentication using JWT
+* Secure token-based communication
+* Integration with frontend via Authorization headers
+
+---
+
+### 2. Post Service
+
+The Post Service manages all content-related operations.
+
+#### Responsibilities:
+
+* Creating posts
+* Fetching posts
+* Managing post data storage
+
+#### Key Concepts:
+
+* Separation of business logic from authentication
+* Independent scaling (high-read systems)
+* RESTful API design
+
+---
+
+### 3. Like Service
+
+The Like Service handles user engagement features.
+
+#### Responsibilities:
+
+* Like a post
+* Unlike a post
+* Track user interactions
+
+#### Key Concepts:
+
+* Lightweight service with focused responsibility
+* Designed for high-frequency operations
+* Can be optimized independently
+
+---
+
+## Communication Between Services
+
+Currently, services communicate via HTTP APIs. Each service exposes endpoints which can be consumed by the frontend or other services if needed.
+
+Future improvements may include:
+
+* API Gateway (single entry point)
+* Service-to-service authentication
+* Message queues for async communication
+
+---
+
+## Local Development
+
+Each microservice can be run independently using:
+
+```bash
 dotnet run
 ```
 
-Repeat for PostService and LikeService.
+This allows developers to test services in isolation or together.
 
 ---
 
-## Environment Variables
+## Containerization
 
-Each service may require:
+Docker is used to ensure consistency across environments.
 
-```
-ASPNETCORE_ENVIRONMENT=Development
-JWT_SECRET=your_secret_key
-DB_CONNECTION_STRING=your_connection_string
-```
+Each service includes a Dockerfile which:
 
----
+* Builds the application
+* Exposes a fixed port (e.g., 8080)
+* Runs the service inside a container
 
-## Docker Setup
-
-### Build Image
-
-```
-docker build -t auth-service .
-```
-
-### Run Container
-
-```
-docker run -p 8080:8080 auth-service
-```
+This makes deployment platform-independent.
 
 ---
 
-## Deployment (Render)
+## Deployment Strategy
 
-### Steps
+The backend is deployed using **Render**, where:
 
-1. Push code to GitHub
-2. Go to Render Dashboard
-3. Create **New Web Service**
-4. Connect repository
-5. Select Docker environment
-6. Set port: `8080`
+* Each microservice is deployed as an individual web service
+* Docker is used as the runtime environment
+* Each service gets its own public URL
 
-Repeat for each microservice.
+Example:
 
----
-
-## API Endpoints (Example)
-
-### Auth Service
-
-```
-POST /api/auth/login
-POST /api/auth/register
-```
-
-### Post Service
-
-```
-POST /api/posts
-GET /api/posts
-```
-
-### Like Service
-
-```
-POST /api/likes
-DELETE /api/likes/{id}
-```
+* Auth Service → https://auth-service.onrender.com
+* Post Service → https://post-service.onrender.com
+* Like Service → https://like-service.onrender.com
 
 ---
 
-## CORS Configuration
+## Security Considerations
 
-Ensure CORS is enabled:
-
-```
-AllowAnyOrigin
-AllowAnyHeader
-AllowAnyMethod
-```
+* JWT tokens are used for authentication
+* Sensitive configuration is stored in environment variables
+* CORS is configured to allow frontend communication
 
 ---
 
-## Notes
+## Design Principles Followed
 
-* All services must be running for full functionality
-* Update service URLs when deploying
-* Use environment variables in production
+* **Single Responsibility Principle** – Each service has one job
+* **Loose Coupling** – Services are independent
+* **Scalability** – Services can scale individually
+* **Maintainability** – Easier to debug and extend
 
 ---
 
-## Future Improvements
+## Future Enhancements
 
-* API Gateway integration
-* Centralized logging
-* Service discovery
-* CI/CD pipeline
+* API Gateway (YARP / Azure APIM)
+* Centralized logging (Serilog + Seq)
+* Distributed tracing
+* CI/CD pipelines
+* Database per service (if not already separated)
+
+---
+
+## Conclusion
+
+This backend demonstrates a real-world microservices approach using .NET, focusing on clean separation of concerns, scalability, and modern deployment practices. It provides a strong foundation for building production-grade distributed systems.
 
 ---
