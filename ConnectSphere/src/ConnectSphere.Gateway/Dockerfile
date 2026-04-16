@@ -7,17 +7,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy csproj files - FIXED: Use correct folder name
-COPY ["src/ConnectSphere.Gateway/ConnectSphere.Gateway.csproj", "src/ConnectSphere.Gateway/"]
+# Copy csproj files - FIXED: Include ConnectSphere folder in path
+COPY ["ConnectSphere/src/ConnectSphere.Gateway/ConnectSphere.Gateway.csproj", "ConnectSphere/src/ConnectSphere.Gateway/"]
 
 # Restore dependencies
-RUN dotnet restore "./src/ConnectSphere.Gateway/ConnectSphere.Gateway.csproj"
+RUN dotnet restore "./ConnectSphere/src/ConnectSphere.Gateway/ConnectSphere.Gateway.csproj"
 
 # Copy everything else
 COPY . .
 
 # Build
-WORKDIR "/src/src/ConnectSphere.Gateway"
+WORKDIR "/src/ConnectSphere/src/ConnectSphere.Gateway"
 RUN dotnet build "./ConnectSphere.Gateway.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Publish
