@@ -1,0 +1,6 @@
+@ConnectSphere.Feed.API_HostAddress = http://localhost:5001
+
+GET {{ConnectSphere.Feed.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
