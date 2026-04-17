@@ -35,6 +35,8 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(connectionString));
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<AuthDbContext>();
 
 // ── Redis ─────────────────────────────────────────────────────────────────────
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
