@@ -10,6 +10,13 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Render PORT Configuration ─────────────────────────────────────────────────
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://+:{port}");
+}
+
 // ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<LikeDbContext>(options =>
     options.UseNpgsql(
@@ -51,6 +58,7 @@ builder.Services.AddHttpClient<PostServiceClient>(client =>
     client.BaseAddress = new Uri(
         builder.Configuration["Services:PostService"]!);
 });
+
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -104,6 +112,9 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ── Health Checks ─────────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 // ── Middleware Pipeline ───────────────────────────────────────────────────────
@@ -118,6 +129,7 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // ── Auto-migrate on startup ───────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
