@@ -5,15 +5,12 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Render PORT Configuration ─────────────────────────────────────────────────
-// Render sets the PORT environment variable at runtime
+// Render sets the PORT environment variable at runtime.
+// UseUrls only — ConfigureKestrel duplicate removed (caused port override warnings)
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
 {
     builder.WebHost.UseUrls($"http://+:{port}");
-    builder.WebHost.ConfigureKestrel(serverOptions =>
-    {
-        serverOptions.ListenAnyIP(int.Parse(port));
-    });
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -68,6 +65,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// ── Swagger (Development only) ───────────────────────────────────────────────
 
     app.UseSwagger();
     app.UseSwaggerUI(options =>
@@ -83,10 +81,13 @@ var app = builder.Build();
     });
 
 
-// FIX: No UseHttpsRedirection — backends are plain HTTP
+// No UseHttpsRedirection — backends are plain HTTP
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ── Health check endpoint (required by Render) ────────────────────────────────
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.MapReverseProxy();
