@@ -97,8 +97,6 @@ builder.Services.AddAuthentication(options =>
     options.SaveTokens        = true;
     options.CorrelationCookie.SameSite    = SameSiteMode.None;
     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.NonceCookie.SameSite          = SameSiteMode.None;
-    options.NonceCookie.SecurePolicy      = CookieSecurePolicy.Always;
 })
 .AddGitHub(options =>
 {
