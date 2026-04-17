@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
+using Microsoft.AspNetCore.HttpOverrides;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Render PORT Configuration ─────────────────────────────────────────────────
@@ -13,7 +13,12 @@ if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://+:{port}");
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 // ── YARP Gateway ─────────────────────────────────────────────────────────────
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -66,7 +71,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // ── Swagger (Development only) ───────────────────────────────────────────────
-
+app.UseForwardedHeaders();
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {

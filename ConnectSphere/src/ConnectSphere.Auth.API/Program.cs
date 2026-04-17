@@ -191,7 +191,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
-
 // ── Middleware Pipeline ───────────────────────────────────────────────────────
 app.UseSwagger();
 app.UseSwaggerUI();
