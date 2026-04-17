@@ -58,11 +58,10 @@ builder.Services.AddAuthentication(options =>
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
-    options.Cookie.SameSite  = SameSiteMode.Lax;
-    // UPDATED: Handle secure cookie based on environment
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
-        ? CookieSecurePolicy.None 
-        : CookieSecurePolicy.Always;
+    options.Cookie.SameSite = builder.Environment.IsDevelopment()
+        ? SameSiteMode.Lax
+        : SameSiteMode.None;                   // ← required for cross-site OAuth
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // None requires Secure=true
 })
 .AddJwtBearer(options =>
 {
@@ -96,6 +95,10 @@ builder.Services.AddAuthentication(options =>
     options.CallbackPath      = "/signin-google";
     options.SignInScheme      = CookieAuthenticationDefaults.AuthenticationScheme;
     options.SaveTokens        = true;
+    options.CorrelationCookie.SameSite    = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.NonceCookie.SameSite          = SameSiteMode.None;
+    options.NonceCookie.SecurePolicy      = CookieSecurePolicy.Always;
 })
 .AddGitHub(options =>
 {
