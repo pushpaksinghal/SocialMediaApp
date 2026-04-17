@@ -52,7 +52,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        var origins = new List<string> { "https://social-media-app-frontend-dun.vercel.app/" };
+        var origins = new List<string> { "https://social-media-app-frontend-dun.vercel.app" };
         if (!string.IsNullOrEmpty(allowedOrigin))
             origins.Add(allowedOrigin);
 

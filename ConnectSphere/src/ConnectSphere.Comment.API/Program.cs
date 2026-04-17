@@ -135,7 +135,7 @@ builder.Services.AddSwaggerGen(c =>
 // ── CORS ──────────────────────────────────────────────────────────────────────
 var allowedOrigin = builder.Configuration["Cors:AllowedOrigin"] 
     ?? builder.Configuration["CORS__ALLOWEDORIGIN"]
-    ?? "https://connectsphere-frontend.vercel.app";  // Default for production
+    ?? "https://social-media-app-frontend-dun.vercel.app";  // Default for production
 
 builder.Services.AddCors(options =>
 {
