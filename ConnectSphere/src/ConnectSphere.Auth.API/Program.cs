@@ -95,8 +95,17 @@ builder.Services.AddAuthentication(options =>
     options.CallbackPath      = "/signin-google";
     options.SignInScheme      = CookieAuthenticationDefaults.AuthenticationScheme;
     options.SaveTokens        = true;
-    options.CorrelationCookie.SameSite    = SameSiteMode.None;
-    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    
+    // ADD THIS — force the exact redirect URI Google should use
+    options.Events.OnRedirectToAuthorizationEndpoint = context =>
+    {
+        var redirectUri = "https://connectsphere-auth-api.onrender.com/signin-google";
+        context.Response.Redirect(context.RedirectUri.Replace(
+            new Uri(context.RedirectUri).GetLeftPart(UriPartial.Path),
+            redirectUri
+        ));
+        return Task.CompletedTask;
+    };
 })
 .AddGitHub(options =>
 {
