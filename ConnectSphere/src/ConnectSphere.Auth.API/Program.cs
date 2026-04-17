@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 using AspNet.Security.OAuth.GitHub;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,7 +49,13 @@ if (!string.IsNullOrEmpty(redisConnectionString))
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? builder.Configuration["JWT__Key"];
 if (string.IsNullOrEmpty(jwtSecret))
     throw new Exception("JWT Secret not configured");
-
+// Add this near the top, before builder.Services.AddAuthentication(...)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();  // Trust all proxies (safe on Render)
+    options.KnownProxies.Clear();
+});
 // ── Authentication ────────────────────────────────────────────────────────────
 builder.Services.AddAuthentication(options =>
 {
@@ -192,7 +199,11 @@ app.UseSwaggerUI();
 
 // ADDED: Health check endpoint
 app.MapHealthChecks("/health");
-
+// Add near the top of the middleware pipeline, before UseCors
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseCors("AllowFrontend");
 app.UseMiddleware<JwtBlacklistMiddleware>();
 app.UseAuthentication();
