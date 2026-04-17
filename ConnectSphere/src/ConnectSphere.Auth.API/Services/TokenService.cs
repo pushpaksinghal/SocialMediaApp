@@ -52,39 +52,76 @@ public class TokenService : ITokenService
 
     public async Task StoreRefreshTokenAsync(int userId, string refreshToken)
     {
-        var db = _redis.GetDatabase();
+        try
+        {
+             var db = _redis.GetDatabase();
         var expiry = TimeSpan.FromDays(
             double.Parse(_config["Jwt:RefreshTokenDays"]!));
 
         // Store: refreshToken → userId  (for lookup on refresh)
         await db.StringSetAsync(
             $"refresh:{refreshToken}", userId.ToString(), expiry);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error storing refresh token: {ex.Message}");
+        }
     }
 
     public async Task<int?> ValidateRefreshTokenAsync(string refreshToken)
     {
-        var db = _redis.GetDatabase();
+        try
+        {
+            var db = _redis.GetDatabase();
         var value = await db.StringGetAsync($"refresh:{refreshToken}");
 
         if (value.IsNullOrEmpty) return null;
-        return int.Parse(value!);
+        return int. Parse(value!);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error validating refresh token: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task RevokeRefreshTokenAsync(string refreshToken)
+{
+    try
     {
         var db = _redis.GetDatabase();
         await db.KeyDeleteAsync($"refresh:{refreshToken}");
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Redis unavailable, skipping token revocation: {ex.Message}");
+    }
+}
 
     public async Task BlacklistAccessTokenAsync(string accessToken, TimeSpan remaining)
+{
+    try
     {
         var db = _redis.GetDatabase();
         await db.StringSetAsync($"blacklist:{accessToken}", "1", remaining);
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Redis unavailable, skipping token blacklist: {ex.Message}");
+    }
+}
 
     public async Task<bool> IsAccessTokenBlacklistedAsync(string accessToken)
+{
+    try
     {
         var db = _redis.GetDatabase();
         return await db.KeyExistsAsync($"blacklist:{accessToken}");
     }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Redis unavailable, token assumed not blacklisted: {ex.Message}");
+        return false;
+    }
+}
 }
