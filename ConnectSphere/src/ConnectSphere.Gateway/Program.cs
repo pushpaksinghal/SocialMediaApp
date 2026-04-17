@@ -68,8 +68,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -82,7 +81,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger-notif/v1/swagger.json", "Notif API");
         options.RoutePrefix = "swagger";
     });
-}
+
 
 // FIX: No UseHttpsRedirection — backends are plain HTTP
 app.UseCors("AllowFrontend");

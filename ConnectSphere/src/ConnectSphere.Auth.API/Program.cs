@@ -176,16 +176,9 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 // ── Middleware Pipeline ───────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    // ADDED: Redirect HTTP to HTTPS in production
-    app.UseHttpsRedirection();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
+
 
 // ADDED: Health check endpoint
 app.MapHealthChecks("/health");
