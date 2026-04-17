@@ -36,13 +36,12 @@ var connectionString = builder.Configuration.GetConnectionString("Default")
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+
 var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 if (!string.IsNullOrEmpty(redisConnectionString))
 {
-    var redis = ConnectionMultiplexer.Connect(redisConnectionString);
-    builder.Services.AddSingleton<IConnectionMultiplexer>(redis);
-    builder.Services.AddDataProtection()
-        .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys");
+    builder.Services.AddSingleton<IConnectionMultiplexer>(
+        ConnectionMultiplexer.Connect(redisConnectionString));
 }
 
 // ── JWT Auth ──────────────────────────────────────────────────────────────────
